@@ -81,7 +81,8 @@ have requirements (specimen must be in watery area to drink, next to food to eat
  ## Details
  
  > For the sake of initial values, we assume that average daily need of average
- > specimen over the whole simulation is 10.
+ > specimen over the whole simulation is 10. All the numbers will be tweaked by
+ > trial and error once implemented.
  
  ### World
  
@@ -122,11 +123,11 @@ have requirements (specimen must be in watery area to drink, next to food to eat
  
  Food is described with (gain = how much hunger is satisfies):
  
-- initial gain
-- final gain
-- lifespan
+- initial gain (random from 30-50)
+- final gain (35-65% of initial gain)
+- lifespan (random from 60-100 days)
 
-If a specimen consumes food at the same day as it was spawned, he satisfies his 
+If a specimen consumes food at the same day as that food was spawned, he satisfies his 
 need by initial gain. Every day through the lifespan (measured in days) gain
 of that food object decreases linearily to final gain (at (spawn time + lifespan) 
 moment, objects gain = final gain). Next day the object disappears.
@@ -137,11 +138,56 @@ moment, objects gain = final gain). Next day the object disappears.
 
 #### Genetics
 
+> Unless explicitly stated, things like `daily`, `value`, `weight`, etc are `float`s.
+
 ##### Genotype
 
     enum Needs = ...  # see section below
+    enum Feature = several (lets starts with 10) values without clear semantics (they represent the magic that we're trying to figure out in DNA)
+    enum Sex = Male, Female
+
+    class Genome:
+        class Chromosome:
+            daily[Need] needs
+            value[Feature] features
+
+        # size at least 3 - one male, one female, one general; 
+        weight[Chromosome] genes
+        # never the same
+        Sex sex
+
+        def weightedChromosome() -> Chromosome: # this is more like RNA, final level before transcription to fenotype
+            first chromosome is related to being on one sex, last of the other
+            when an entity is male, male-related chromose weight is doubled and female-related weight is cut in half
+            reverse happens for females
+
+            return chromosome obtained by weighing chromosomes from genes by their weights
 
 ##### Fenotype
+
+    class StateOverLife<Unit>: # utility object
+        Unit base
+        double ageParam
+
+        def value(age: (0, 1]) -> Unit:
+            something that simulates aging, with a base value that is multiplied by some function controlled by age param
+            (e.g. when reaching half an age, that property may be almost twice the base, while infants and elders are
+            down to 75% of base)
+
+    class Fenotype:
+        Sex sex
+        int diesAt
+        //this impacts thresholds of satisfactionLevels
+        [0.9, 1.1][Need] character
+        StateOverLife<Health> healthState # Health is int
+        StateOverLife<radius> eyesight
+        StateOverLife<radius> speed
+        StateOverLife<daily>[Need] urges
+        StateOverLife<(0, 0.5]> mentalStrength # controls happiness (psychical condition) threshold
+        StateOverLife<(0, 0.5]> physicalResiliency # controls physical condition threshold
+        StateOverLife<low-int range> replanningPeriod
+
+> We're using term `happiness` for mental state and `(physical) condition` to avoid confusion between `psychical` and `physical`
 
 ##### Transcription
 
@@ -153,6 +199,10 @@ moment, objects gain = final gain). Next day the object disappears.
 ##### Crossover
 
 > details on when it happens - later, at reproduction needs
+
+#### State
+
+> fenotype, age, position, plan, daily and long-term needs saitsfation, timestamp, derivable urges, actions to satisfy needs and to proceed through they day (satisfy() will probably be passed as a callback to action)
 
 #### Needs
 
